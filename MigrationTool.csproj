@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x64;x86</Platforms>
+    <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
+    <Nullable>enable</Nullable>
+    <AssemblyName>MigrationTool</AssemblyName>
+    <RootNamespace>MigrationTool</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.5" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <!-- Publish Settings for Server 2016 compatibility -->
+  <PropertyGroup>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishSingleFile>false</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+</Project>

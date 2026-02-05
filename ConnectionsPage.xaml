@@ -1,0 +1,142 @@
+<Page x:Class="MigrationTool.ConnectionsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:MigrationTool"
+      Background="{StaticResource BackgroundBrush}">
+
+    <Page.Resources>
+        <!-- Inverse Boolean Converter -->
+        <local:InverseBooleanConverter x:Key="InverseBoolConverter"/>
+    </Page.Resources>
+
+    <Grid Margin="30,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Status Bar -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <Border x:Name="StatusBorder" 
+                    Background="#DCFCE7" 
+                    BorderBrush="#86EFAC"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="12,10"
+                    Visibility="Collapsed">
+                <TextBlock x:Name="StatusText" 
+                          FontWeight="SemiBold"
+                          Foreground="#166534"/>
+            </Border>
+            
+            <TextBlock Text="Connection Settings" 
+                      FontSize="24" 
+                      FontWeight="SemiBold"
+                      Margin="0,10,0,0"/>
+        </StackPanel>
+
+        <!-- Connection Forms -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Source Database -->
+            <GroupBox Grid.Column="0" Header="Source Database">
+                <StackPanel Margin="5">
+                    <CheckBox x:Name="SourceUseWindowsAuth" 
+                             Content="Use Windows Authentication"
+                             IsChecked="True"
+                             Checked="Auth_CheckChanged"
+                             Unchecked="Auth_CheckChanged"/>
+
+                    <Label Content="Server Address" 
+                          FontWeight="SemiBold" 
+                          Margin="0,10,0,0"/>
+                    <TextBox x:Name="SourceServer" 
+                            Text="(localdb)\MSSQLLocalDB"/>
+
+                    <Label Content="Database Name" 
+                          FontWeight="SemiBold" 
+                          Margin="0,10,0,0"/>
+                    <TextBox x:Name="SourceDatabase" 
+                            Text=""/>
+
+                    <Grid Margin="0,10,0,0" x:Name="SourceCredentialsGrid">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <Label Content="Username" FontWeight="SemiBold"/>
+                            <TextBox x:Name="SourceUser" 
+                                    IsEnabled="{Binding ElementName=SourceUseWindowsAuth, Path=IsChecked, Converter={StaticResource InverseBoolConverter}}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <Label Content="Password" FontWeight="SemiBold"/>
+                            <PasswordBox x:Name="SourcePassword"
+                                        IsEnabled="{Binding ElementName=SourceUseWindowsAuth, Path=IsChecked, Converter={StaticResource InverseBoolConverter}}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Content="Verify Connection" 
+                           Margin="0,20,0,0"
+                           HorizontalAlignment="Stretch"
+                           Click="TestSourceConnection_Click"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Destination Database -->
+            <GroupBox Grid.Column="2" Header="Destination Database">
+                <StackPanel Margin="5">
+                    <CheckBox x:Name="DestinationUseWindowsAuth" 
+                             Content="Use Windows Authentication"
+                             IsChecked="False"
+                             Checked="Auth_CheckChanged"
+                             Unchecked="Auth_CheckChanged"/>
+
+                    <Label Content="Server Address" 
+                          FontWeight="SemiBold" 
+                          Margin="0,10,0,0"/>
+                    <TextBox x:Name="DestinationServer" 
+                            Text=""/>
+
+                    <Label Content="Database Name" 
+                          FontWeight="SemiBold" 
+                          Margin="0,10,0,0"/>
+                    <TextBox x:Name="DestinationDatabase" 
+                            Text=""/>
+
+                    <Grid Margin="0,10,0,0" x:Name="DestinationCredentialsGrid">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <Label Content="Username" FontWeight="SemiBold"/>
+                            <TextBox x:Name="DestinationUser"
+                                    IsEnabled="{Binding ElementName=DestinationUseWindowsAuth, Path=IsChecked, Converter={StaticResource InverseBoolConverter}}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <Label Content="Password" FontWeight="SemiBold"/>
+                            <PasswordBox x:Name="DestinationPassword"
+                                        IsEnabled="{Binding ElementName=DestinationUseWindowsAuth, Path=IsChecked, Converter={StaticResource InverseBoolConverter}}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Content="Verify Connection" 
+                           Margin="0,20,0,0"
+                           HorizontalAlignment="Stretch"
+                           Click="TestDestinationConnection_Click"/>
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+    </Grid>
+</Page>

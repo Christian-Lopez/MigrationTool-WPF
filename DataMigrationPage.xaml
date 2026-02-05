@@ -1,0 +1,118 @@
+<Page x:Class="MigrationTool.DataMigrationPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{StaticResource BackgroundBrush}">
+
+    <Grid Margin="30,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header and Status -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <Border x:Name="StatusBorder" 
+                    Background="#DCFCE7" 
+                    BorderBrush="#86EFAC"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="12,10"
+                    Visibility="Collapsed">
+                <TextBlock x:Name="StatusText" 
+                          FontWeight="SemiBold"
+                          Foreground="#166534"/>
+            </Border>
+            
+            <TextBlock Text="Data Migration" 
+                      FontSize="24" 
+                      FontWeight="SemiBold"
+                      Margin="0,10,0,0"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Tables List -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBox x:Name="TableSearchBox" 
+                        Grid.Row="0"
+                        Text=""
+                        Margin="0,0,0,10"
+                        TextChanged="TableSearchBox_TextChanged"/>
+
+                <DataGrid x:Name="TablesGrid" 
+                         Grid.Row="1"
+                         AutoGenerateColumns="False"
+                         SelectionMode="Extended"
+                         IsReadOnly="True"
+                         GridLinesVisibility="Horizontal">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Table Name" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="Schema" Binding="{Binding Schema}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+
+            <!-- Options Panel -->
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Table Options" 
+                          FontWeight="SemiBold" 
+                          FontSize="16"
+                          Margin="0,0,0,10"/>
+                
+                <Label Content="Row Limit (0 for all)" FontWeight="SemiBold"/>
+                <TextBox x:Name="RowLimitBox" Text="100" Margin="0,0,0,15"/>
+                
+                <Label Content="WHERE Condition" FontWeight="SemiBold"/>
+                <TextBox x:Name="WhereConditionBox" 
+                        Height="80"
+                        TextWrapping="Wrap"
+                        AcceptsReturn="True"/>
+                
+                <TextBlock Text="Select tables from the list on the left." 
+                          TextWrapping="Wrap" 
+                          Opacity="0.7"
+                          Margin="0,10,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Footer with Actions -->
+        <StackPanel Grid.Row="2" Margin="0,20,0,0">
+            <TextBlock x:Name="ProgressStatusText" 
+                      Text="Ready" 
+                      FontSize="12"
+                      Opacity="0.7"
+                      Margin="0,0,0,5"/>
+            
+            <ProgressBar x:Name="MigrationProgress" 
+                        Minimum="0" 
+                        Maximum="100" 
+                        Value="0" 
+                        Height="10"
+                        Visibility="Collapsed"
+                        Margin="0,0,0,10"/>
+            
+            <StackPanel Orientation="Horizontal" 
+                       HorizontalAlignment="Right">
+                <Button Content="Refresh Tables" 
+                       Margin="0,0,10,0"
+                       Padding="15,8"
+                       Click="RefreshTables_Click"/>
+                <Button Content="Start Migration" 
+                       Padding="15,8"
+                       Click="StartMigration_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Page>
