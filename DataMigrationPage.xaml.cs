@@ -140,6 +140,14 @@ namespace MigrationTool
             });
         }
 
+        private void ConfigureMapping_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is TableMetadata table)
+            {
+                NavigationService?.Navigate(new ColumnMappingPage(table));
+            }
+        }
+
         private async void StartMigration_Click(object sender, RoutedEventArgs e)
         {
             var selectedTables = TablesGrid.SelectedItems.Cast<TableMetadata>().ToList();
@@ -162,8 +170,49 @@ namespace MigrationTool
             {
                 foreach (var table in selectedTables)
                 {
-                    string tableName = $"[{table.Schema}].[{table.Name}]";
-                    await RunBulkCopyAsync(tableName);
+                    // Try to load existing mapping
+                    var mapping = await MappingConfiguration.LoadMappingAsync(
+                        ConnectionsService.SourceBuilder.ConnectionString,
+                        ConnectionsService.DestBuilder.ConnectionString,
+                        table.Schema,
+                        table.Name);
+
+                    if (mapping != null)
+                    {
+                        // Use mapping-based migration
+                        ProgressStatusText.Text = $"Migrating {table.Schema}.{table.Name} with column mapping...";
+                        
+                        int totalRows = await MigrationService.GetRowCountAsync(
+                            ConnectionsService.SourceBuilder.ConnectionString,
+                            table.Schema,
+                            table.Name,
+                            WhereConditionBox.Text.Trim(),
+                            int.TryParse(RowLimitBox.Text, out int limit) ? limit : 0);
+
+                        MigrationProgress.Maximum = totalRows;
+                        MigrationProgress.Value = 0;
+
+                        await MigrationService.MigrateWithMappingAsync(
+                            ConnectionsService.SourceBuilder.ConnectionString,
+                            ConnectionsService.DestBuilder.ConnectionString,
+                            mapping,
+                            WhereConditionBox.Text.Trim(),
+                            int.TryParse(RowLimitBox.Text, out int rowLimit) ? rowLimit : 0,
+                            (rowsCopied) =>
+                            {
+                                Dispatcher.Invoke(() =>
+                                {
+                                    MigrationProgress.Value = rowsCopied;
+                                    ProgressStatusText.Text = $"Copied {rowsCopied} of {totalRows} rows...";
+                                });
+                            });
+                    }
+                    else
+                    {
+                        // Use traditional bulk copy (assumes identical schemas)
+                        string tableName = $"[{table.Schema}].[{table.Name}]";
+                        await RunBulkCopyAsync(tableName);
+                    }
                 }
 
                 ShowStatus($"Successfully migrated {selectedTables.Count} table(s)!", true);

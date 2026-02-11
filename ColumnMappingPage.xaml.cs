@@ -1,0 +1,207 @@
+using MigrationTool.Shared;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+
+namespace MigrationTool
+{
+    public partial class ColumnMappingPage : Page
+    {
+        public ObservableCollection<ColumnMapping> Mappings { get; set; } = new();
+        public List<ColumnInfo> DestinationColumns { get; set; } = new();
+
+        private TableMetadata _currentTable = null!;
+        private List<ColumnInfo> _sourceColumns = new();
+
+        public ColumnMappingPage()
+        {
+            InitializeComponent();
+            DataContext = this;
+        }
+
+        public ColumnMappingPage(TableMetadata table) : this()
+        {
+            _currentTable = table;
+            TableNameText.Text = $"Table: {table.Schema}.{table.Name}";
+            Loaded += async (s, e) => await LoadSchemaAndMappingsAsync();
+        }
+
+        private async Task LoadSchemaAndMappingsAsync()
+        {
+            try
+            {
+                // Load source and destination schemas
+                _sourceColumns = await SchemaComparer.GetTableColumnsAsync(
+                    ConnectionsService.SourceBuilder!.ConnectionString,
+                    _currentTable.Schema,
+                    _currentTable.Name);
+
+                DestinationColumns = await SchemaComparer.GetTableColumnsAsync(
+                    ConnectionsService.DestBuilder!.ConnectionString,
+                    _currentTable.Schema,
+                    _currentTable.Name);
+
+                // Add "(Not Mapped)" option
+                DestinationColumns.Insert(0, new ColumnInfo { ColumnName = "(Not Mapped)", DataType = "" });
+
+                // Try to load existing mapping
+                var existingMapping = await MappingConfiguration.LoadMappingAsync(
+                    ConnectionsService.SourceBuilder.ConnectionString,
+                    ConnectionsService.DestBuilder.ConnectionString,
+                    _currentTable.Schema,
+                    _currentTable.Name);
+
+                if (existingMapping != null)
+                {
+                    // Use existing mapping
+                    Mappings.Clear();
+                    foreach (var mapping in existingMapping.Mappings)
+                    {
+                        Mappings.Add(mapping);
+                    }
+                }
+                else
+                {
+                    // Auto-map
+                    AutoMapColumns();
+                }
+
+                UpdateSummary();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading schema: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void AutoMap_Click(object sender, RoutedEventArgs e)
+        {
+            AutoMapColumns();
+        }
+
+        private void AutoMapColumns()
+        {
+            var destColumnsWithoutNotMapped = DestinationColumns.Where(c => c.ColumnName != "(Not Mapped)").ToList();
+            var autoMappings = SchemaComparer.AutoMapColumns(_sourceColumns, destColumnsWithoutNotMapped);
+
+            Mappings.Clear();
+            foreach (var mapping in autoMappings)
+            {
+                Mappings.Add(mapping);
+            }
+
+            MappingGrid.ItemsSource = Mappings;
+            UpdateSummary();
+        }
+
+        private void ClearAll_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var mapping in Mappings)
+            {
+                mapping.DestinationColumn = null;
+                mapping.Status = MappingStatus.Unmapped;
+            }
+
+            MappingGrid.Items.Refresh();
+            UpdateSummary();
+        }
+
+        private async void SaveMapping_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var config = new TableMappingConfiguration
+                {
+                    SourceConnectionString = ConnectionsService.SourceBuilder!.ConnectionString,
+                    DestinationConnectionString = ConnectionsService.DestBuilder!.ConnectionString,
+                    TableSchema = _currentTable.Schema,
+                    TableName = _currentTable.Name,
+                    Mappings = Mappings.ToList()
+                };
+
+                var (isValid, errors) = SchemaComparer.ValidateMapping(config);
+
+                if (!isValid)
+                {
+                    var errorMessage = string.Join("\n", errors);
+                    var result = MessageBox.Show(
+                        $"Validation issues found:\n\n{errorMessage}\n\nSave anyway?",
+                        "Validation Warning",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+
+                    if (result == MessageBoxResult.No)
+                        return;
+                }
+
+                await MappingConfiguration.SaveMappingAsync(config);
+
+                MessageBox.Show("Mapping saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                NavigationService?.GoBack();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving mapping: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService?.GoBack();
+        }
+
+        private void DestColumnCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ComboBox combo && combo.DataContext is ColumnMapping mapping)
+            {
+                if (mapping.DestinationColumn?.ColumnName == "(Not Mapped)")
+                {
+                    mapping.DestinationColumn = null;
+                    mapping.Status = MappingStatus.Unmapped;
+                }
+                else if (mapping.DestinationColumn != null && mapping.SourceColumn != null)
+                {
+                    if (mapping.SourceColumn.IsCompatibleWith(mapping.DestinationColumn))
+                    {
+                        mapping.Status = MappingStatus.ManualMapped;
+                        mapping.ValidationMessage = null;
+                    }
+                    else
+                    {
+                        mapping.Status = MappingStatus.Incompatible;
+                        mapping.ValidationMessage = $"Incompatible types: {mapping.SourceColumn.DataType} → {mapping.DestinationColumn.DataType}";
+                    }
+                }
+
+                UpdateSummary();
+            }
+        }
+
+        private void UpdateSummary()
+        {
+            if (Mappings.Count == 0)
+                return;
+
+            var summary = SchemaComparer.GetMappingSummary(Mappings.ToList());
+            SummaryText.Text = summary;
+            SummaryBorder.Visibility = Visibility.Visible;
+
+            // Show validation errors
+            var incompatible = Mappings.Where(m => m.Status == MappingStatus.Incompatible).ToList();
+            if (incompatible.Any())
+            {
+                var messages = string.Join("\n", incompatible.Select(m => $"• {m.SourceColumn?.ColumnName}: {m.ValidationMessage}"));
+                ValidationText.Text = messages;
+                ValidationBorder.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ValidationBorder.Visibility = Visibility.Collapsed;
+            }
+        }
+    }
+}

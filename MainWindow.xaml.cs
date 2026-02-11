@@ -9,6 +9,10 @@ namespace MigrationTool
         {
             InitializeComponent();
             
+            // Set version from assembly
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            VersionText.Text = $"v{version?.Major}.{version?.Minor}.{version?.Build}";
+            
             // Navigate to Connections page by default
             ContentFrame.Navigate(new ConnectionsPage());
         }
