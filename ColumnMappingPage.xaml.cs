@@ -101,7 +101,11 @@ namespace MigrationTool
             }
             finally
             {
-                _isLoading = false;
+                // Defer reset so WPF's queued SelectionChanged events (fired during binding
+                // at Normal priority) are suppressed while _isLoading is still true.
+                _ = Dispatcher.BeginInvoke(
+                    System.Windows.Threading.DispatcherPriority.Background,
+                    new Action(() => _isLoading = false));
             }
         }
 
@@ -112,16 +116,48 @@ namespace MigrationTool
 
         private void AutoMapColumns()
         {
-            var destColumnsWithoutNotMapped = DestinationColumns.Where(c => c.ColumnName != "(Not Mapped)").ToList();
-            var autoMappings = SchemaComparer.AutoMapColumns(_sourceColumns, destColumnsWithoutNotMapped);
-
-            Mappings.Clear();
-            foreach (var mapping in autoMappings)
+            _isLoading = true;
+            try
             {
-                Mappings.Add(mapping);
-            }
+                var destColumnsWithoutNotMapped = DestinationColumns
+                    .Where(c => c.ColumnName != "(Not Mapped)")
+                    .ToList();
 
-            UpdateSummary();
+                // Only auto-map columns that are currently unmapped — preserve Manual/AutoMapped/Incompatible
+                foreach (var mapping in Mappings.Where(m => m.Status == MappingStatus.Unmapped))
+                {
+                    if (mapping.SourceColumn == null) continue;
+
+                    // Try exact name match (case-insensitive)
+                    var destCol = destColumnsWithoutNotMapped.FirstOrDefault(d =>
+                        d.ColumnName.Equals(mapping.SourceColumn.ColumnName, StringComparison.OrdinalIgnoreCase));
+
+                    if (destCol != null)
+                    {
+                        mapping.DestinationColumn = destCol;
+                        mapping.Status = mapping.SourceColumn.IsCompatibleWith(destCol)
+                            ? MappingStatus.AutoMapped
+                            : MappingStatus.Incompatible;
+
+                        if (mapping.Status == MappingStatus.Incompatible)
+                            mapping.ValidationMessage = $"Incompatible types: {mapping.SourceColumn.DataType} → {destCol.DataType}";
+                    }
+                }
+
+                MappingGrid.Items.Refresh();
+            }
+            finally
+            {
+                // Defer reset so WPF's queued SelectionChanged events are suppressed
+                // before the flag clears (they fire at Normal priority; Background is lower).
+                _ = Dispatcher.BeginInvoke(
+                    System.Windows.Threading.DispatcherPriority.Background,
+                    new Action(() =>
+                    {
+                        _isLoading = false;
+                        UpdateSummary();
+                    }));
+            }
         }
 
         private void ClearAll_Click(object sender, RoutedEventArgs e)
