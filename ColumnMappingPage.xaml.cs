@@ -16,6 +16,7 @@ namespace MigrationTool
 
         private TableMetadata _currentTable = null!;
         private List<ColumnInfo> _sourceColumns = new();
+        private bool _isLoading = false;
 
         public ColumnMappingPage()
         {
@@ -32,6 +33,7 @@ namespace MigrationTool
 
         private async Task LoadSchemaAndMappingsAsync()
         {
+            _isLoading = true;
             try
             {
                 // Load source and destination schemas
@@ -66,8 +68,17 @@ namespace MigrationTool
                 }
                 else
                 {
-                    // Auto-map
-                    AutoMapColumns();
+                    // Start with all columns unmapped
+                    Mappings.Clear();
+                    foreach (var col in _sourceColumns)
+                    {
+                        Mappings.Add(new ColumnMapping
+                        {
+                            SourceColumn = col,
+                            DestinationColumn = null,
+                            Status = MappingStatus.Unmapped
+                        });
+                    }
                 }
 
                 UpdateSummary();
@@ -75,6 +86,10 @@ namespace MigrationTool
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading schema: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                _isLoading = false;
             }
         }
 
@@ -94,7 +109,6 @@ namespace MigrationTool
                 Mappings.Add(mapping);
             }
 
-            MappingGrid.ItemsSource = Mappings;
             UpdateSummary();
         }
 
@@ -156,6 +170,8 @@ namespace MigrationTool
 
         private void DestColumnCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (_isLoading) return;
+
             if (sender is ComboBox combo && combo.DataContext is ColumnMapping mapping)
             {
                 if (mapping.DestinationColumn?.ColumnName == "(Not Mapped)")

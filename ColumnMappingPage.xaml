@@ -61,6 +61,7 @@
                 CornerRadius="8"
                 Padding="0">
             <DataGrid x:Name="MappingGrid"
+                     ItemsSource="{Binding Mappings}"
                      AutoGenerateColumns="False"
                      CanUserAddRows="False"
                      CanUserDeleteRows="False"
