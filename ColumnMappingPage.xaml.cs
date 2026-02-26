@@ -28,7 +28,11 @@ namespace MigrationTool
         {
             _currentTable = table;
             TableNameText.Text = $"Table: {table.Schema}.{table.Name}";
-            Loaded += async (s, e) => await LoadSchemaAndMappingsAsync();
+            Loaded += async (s, e) =>
+            {
+                RefreshPathLabel();
+                await LoadSchemaAndMappingsAsync();
+            };
         }
 
         private async Task LoadSchemaAndMappingsAsync()
@@ -59,10 +63,18 @@ namespace MigrationTool
 
                 if (existingMapping != null)
                 {
-                    // Use existing mapping
+                    // Re-resolve DestinationColumn references to match the live DestinationColumns list.
+                    // Deserialized instances are new objects, so the ComboBox won't find them by reference
+                    // unless we swap them for the actual items in its ItemsSource.
                     Mappings.Clear();
                     foreach (var mapping in existingMapping.Mappings)
                     {
+                        if (mapping.DestinationColumn != null)
+                        {
+                            mapping.DestinationColumn = DestinationColumns
+                                .FirstOrDefault(d => d.ColumnName == mapping.DestinationColumn.ColumnName)
+                                ?? null;
+                        }
                         Mappings.Add(mapping);
                     }
                 }
@@ -166,6 +178,35 @@ namespace MigrationTool
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             NavigationService?.GoBack();
+        }
+
+        private void ChangePath_Click(object sender, RoutedEventArgs e)
+        {
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog
+            {
+                Description = "Select folder for mapping files",
+                SelectedPath = MappingConfiguration.MappingDirectory,
+                ShowNewFolderButton = true
+            };
+
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                MappingConfiguration.MappingDirectory = dialog.SelectedPath;
+                MappingConfiguration.SavePathPreference();
+                RefreshPathLabel();
+            }
+        }
+
+        private void ResetPath_Click(object sender, RoutedEventArgs e)
+        {
+            MappingConfiguration.ResetToDefaultDirectory();
+            MappingConfiguration.SavePathPreference();
+            RefreshPathLabel();
+        }
+
+        private void RefreshPathLabel()
+        {
+            MappingPathText.Text = MappingConfiguration.MappingDirectory;
         }
 
         private void DestColumnCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -1,3 +1,4 @@
+using MigrationTool.Shared;
 using System.Windows;
 
 namespace MigrationTool
@@ -7,6 +8,7 @@ namespace MigrationTool
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+            MappingConfiguration.LoadPathPreference();
         }
     }
 }

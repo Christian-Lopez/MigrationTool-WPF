@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace MigrationTool.Shared
 {
@@ -63,9 +65,24 @@ namespace MigrationTool.Shared
 
         private static string GetConnectionHash(string connectionString)
         {
-            // Simple hash based on server and database
+            // Build a stable filename segment from server + database.
             var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString);
-            return $"{builder.DataSource}_{builder.InitialCatalog}".Replace("\\", "_").Replace(".", "_");
+            var dataSource = builder.DataSource;
+
+            // LocalDB resolves to a named pipe like "np:////pipe/LOCALDB#7664B7F1/tsql/query".
+            // The instance ID (after #) is randomly assigned on every restart, so we must
+            // normalize any LocalDB/pipe connection to a stable token.
+            if (dataSource.StartsWith("np:", StringComparison.OrdinalIgnoreCase) ||
+                dataSource.IndexOf("LOCALDB", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                dataSource = "localdb";
+            }
+
+            var raw = $"{dataSource}_{builder.InitialCatalog}";
+
+            // Replace every character that is illegal in a Windows filename with '_'
+            var invalidChars = Path.GetInvalidFileNameChars();
+            return new string(raw.Select(c => invalidChars.Contains(c) ? '_' : c).ToArray());
         }
     }
 }
