@@ -35,50 +35,7 @@
             </StackPanel>
         </Border>
 
-        <!-- Mapping Path Bar -->
-        <Border Grid.Row="1"
-                Background="#F8FAFC"
-                BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="6"
-                Padding="12,8"
-                Margin="0,0,0,15">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0"
-                           Text="📁 Mapping folder: "
-                           FontSize="12"
-                           Foreground="#374151"
-                           VerticalAlignment="Center"/>
-                <TextBlock x:Name="MappingPathText"
-                           Grid.Column="1"
-                           Text=""
-                           FontSize="12"
-                           Foreground="#6B7280"
-                           FontFamily="Consolas"
-                           VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
-                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
-                <Button Grid.Column="2"
-                        Content="Change"
-                        Click="ChangePath_Click"
-                        Padding="10,4"
-                        Margin="10,0,6,0"
-                        FontSize="12"/>
-                <Button Grid.Column="3"
-                        Content="Reset to Default"
-                        Click="ResetPath_Click"
-                        Padding="10,4"
-                        FontSize="12"/>
-            </Grid>
-        </Border>
 
-        <!-- Mapping Summary -->
         <Border Grid.Row="2"
                 x:Name="SummaryBorder"
                 Background="#EFF6FF"

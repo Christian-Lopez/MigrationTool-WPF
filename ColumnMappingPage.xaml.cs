@@ -30,7 +30,6 @@ namespace MigrationTool
             TableNameText.Text = $"Table: {table.Schema}.{table.Name}";
             Loaded += async (s, e) =>
             {
-                RefreshPathLabel();
                 await LoadSchemaAndMappingsAsync();
             };
         }
@@ -216,34 +215,7 @@ namespace MigrationTool
             NavigationService?.GoBack();
         }
 
-        private void ChangePath_Click(object sender, RoutedEventArgs e)
-        {
-            using var dialog = new System.Windows.Forms.FolderBrowserDialog
-            {
-                Description = "Select folder for mapping files",
-                SelectedPath = MappingConfiguration.MappingDirectory,
-                ShowNewFolderButton = true
-            };
 
-            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                MappingConfiguration.MappingDirectory = dialog.SelectedPath;
-                MappingConfiguration.SavePathPreference();
-                RefreshPathLabel();
-            }
-        }
-
-        private void ResetPath_Click(object sender, RoutedEventArgs e)
-        {
-            MappingConfiguration.ResetToDefaultDirectory();
-            MappingConfiguration.SavePathPreference();
-            RefreshPathLabel();
-        }
-
-        private void RefreshPathLabel()
-        {
-            MappingPathText.Text = MappingConfiguration.MappingDirectory;
-        }
 
         private void DestColumnCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

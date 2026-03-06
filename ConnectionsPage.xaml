@@ -142,15 +142,17 @@
             </GroupBox>
         </Grid>
 
-        <!-- App Settings Storage -->
-        <GroupBox Grid.Row="2" Header="App Settings Storage" Margin="0,20,0,20">
+        <!-- Storage Paths -->
+        <GroupBox Grid.Row="2" Header="Storage Paths" Margin="0,20,0,20">
             <StackPanel Margin="5">
-                <TextBlock Text="Folder where app_settings.json is saved:"
+
+                <!-- App settings path -->
+                <TextBlock Text="App settings file (app_settings.json):"
                            FontSize="12"
-                           FontWeight="Normal"
+                           FontWeight="SemiBold"
                            Foreground="#374151"
-                           Margin="0,0,0,6"/>
-                <Grid>
+                           Margin="0,0,0,4"/>
+                <Grid Margin="0,0,0,14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -173,6 +175,37 @@
                             Padding="12,6"
                             Click="ResetAppSettingsPath_Click"/>
                 </Grid>
+
+                <!-- Mapping files path -->
+                <TextBlock Text="Column mapping files folder:"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="#374151"
+                           Margin="0,0,0,4"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="MappingPathBox"
+                             Grid.Column="0"
+                             IsReadOnly="True"
+                             FontFamily="Consolas"
+                             FontSize="12"
+                             VerticalContentAlignment="Center"
+                             ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                    <Button Grid.Column="1"
+                            Content="Browse…"
+                            Margin="8,0,6,0"
+                            Padding="12,6"
+                            Click="BrowseMappingPath_Click"/>
+                    <Button Grid.Column="2"
+                            Content="Reset to Default"
+                            Padding="12,6"
+                            Click="ResetMappingPath_Click"/>
+                </Grid>
+
             </StackPanel>
         </GroupBox>
     </Grid>

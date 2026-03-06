@@ -23,12 +23,15 @@ namespace MigrationTool
             {
                 LoadSavedSettings();
                 AppSettingsPathBox.Text = AppSettings.SettingsFilePath;
+                MappingPathBox.Text = MappingConfiguration.MappingDirectory;
             };
-            // Refresh the path label whenever we navigate back to this page
             IsVisibleChanged += (s, e) =>
             {
                 if ((bool)e.NewValue)
+                {
                     AppSettingsPathBox.Text = AppSettings.SettingsFilePath;
+                    MappingPathBox.Text = MappingConfiguration.MappingDirectory;
+                }
             };
         }
 
@@ -331,6 +334,30 @@ namespace MigrationTool
         {
             AppSettings.ResetSettingsPath();
             AppSettingsPathBox.Text = AppSettings.SettingsFilePath;
+        }
+
+        private void BrowseMappingPath_Click(object sender, RoutedEventArgs e)
+        {
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog
+            {
+                Description = "Select folder for column mapping files",
+                SelectedPath = MappingConfiguration.MappingDirectory,
+                ShowNewFolderButton = true
+            };
+
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                MappingConfiguration.MappingDirectory = dialog.SelectedPath;
+                MappingConfiguration.SavePathPreference();
+                MappingPathBox.Text = MappingConfiguration.MappingDirectory;
+            }
+        }
+
+        private void ResetMappingPath_Click(object sender, RoutedEventArgs e)
+        {
+            MappingConfiguration.ResetToDefaultDirectory();
+            MappingConfiguration.SavePathPreference();
+            MappingPathBox.Text = MappingConfiguration.MappingDirectory;
         }
     }
 
