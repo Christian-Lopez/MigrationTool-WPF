@@ -8,10 +8,13 @@
         <local:InverseBooleanConverter x:Key="InverseBoolConverter"/>
     </Page.Resources>
 
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
     <Grid Margin="30,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Status Bar -->
@@ -35,7 +38,7 @@
         </StackPanel>
 
         <!-- Connection Forms -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" Margin="0,0,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="20"/>
@@ -138,5 +141,40 @@
                 </StackPanel>
             </GroupBox>
         </Grid>
+
+        <!-- App Settings Storage -->
+        <GroupBox Grid.Row="2" Header="App Settings Storage" Margin="0,20,0,20">
+            <StackPanel Margin="5">
+                <TextBlock Text="Folder where app_settings.json is saved:"
+                           FontSize="12"
+                           FontWeight="Normal"
+                           Foreground="#374151"
+                           Margin="0,0,0,6"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="AppSettingsPathBox"
+                             Grid.Column="0"
+                             IsReadOnly="True"
+                             FontFamily="Consolas"
+                             FontSize="12"
+                             VerticalContentAlignment="Center"
+                             ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                    <Button Grid.Column="1"
+                            Content="Browse…"
+                            Margin="8,0,6,0"
+                            Padding="12,6"
+                            Click="BrowseAppSettingsPath_Click"/>
+                    <Button Grid.Column="2"
+                            Content="Reset to Default"
+                            Padding="12,6"
+                            Click="ResetAppSettingsPath_Click"/>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
     </Grid>
+    </ScrollViewer>
 </Page>

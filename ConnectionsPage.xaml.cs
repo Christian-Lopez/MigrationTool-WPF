@@ -15,16 +15,21 @@ namespace MigrationTool
 {
     public partial class ConnectionsPage : Page
     {
-        private const string SettingsFileName = "connection_settings.ini";
-        private static readonly string SettingsFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "MigrationTool",
-            SettingsFileName);
 
         public ConnectionsPage()
         {
             InitializeComponent();
-            Loaded += (s, e) => LoadSavedSettings();
+            Loaded += (s, e) =>
+            {
+                LoadSavedSettings();
+                AppSettingsPathBox.Text = AppSettings.SettingsFilePath;
+            };
+            // Refresh the path label whenever we navigate back to this page
+            IsVisibleChanged += (s, e) =>
+            {
+                if ((bool)e.NewValue)
+                    AppSettingsPathBox.Text = AppSettings.SettingsFilePath;
+            };
         }
 
         private async void TestSourceConnection_Click(object sender, RoutedEventArgs e)
@@ -257,34 +262,24 @@ namespace MigrationTool
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(SettingsFilePath)!);
-
-                var settings = File.Exists(SettingsFilePath) ? File.ReadAllLines(SettingsFilePath) : Array.Empty<string>();
-                var settingsDict = new System.Collections.Generic.Dictionary<string, string>();
-
-                foreach (var line in settings)
+                var s = AppSettings.Load();
+                if (isSource)
                 {
-                    if (line.Contains('='))
-                    {
-                        var parts = line.Split(new[] { '=' }, 2);
-                        settingsDict[parts[0].Trim()] = parts.Length > 1 ? parts[1].Trim() : "";
-                    }
+                    s.SourceServer = server;
+                    s.SourceDatabase = database;
+                    s.SourceUser = user;
+                    s.SourceUseWindowsAuth = isWindowsAuth;
                 }
-
-                string prefix = isSource ? "Source" : "Dest";
-                settingsDict[$"{prefix}Server"] = server;
-                settingsDict[$"{prefix}Database"] = database;
-                settingsDict[$"{prefix}User"] = user;
-                settingsDict[$"{prefix}UseWindowsAuth"] = isWindowsAuth.ToString();
-                // Note: We're not saving passwords for security. Users must re-enter them.
-
-                var lines = new System.Collections.Generic.List<string>();
-                foreach (var kvp in settingsDict)
+                else
                 {
-                    lines.Add($"{kvp.Key}={kvp.Value}");
+                    s.DestServer = server;
+                    s.DestDatabase = database;
+                    s.DestUser = user;
+                    s.DestUseWindowsAuth = isWindowsAuth;
                 }
-
-                File.WriteAllLines(SettingsFilePath, lines);
+                // Always stamp the current mapping path so it's preserved in the JSON
+                s.MappingDirectory = MappingConfiguration.MappingDirectory;
+                AppSettings.Save(s);
             }
             catch (Exception ex)
             {
@@ -296,47 +291,17 @@ namespace MigrationTool
         {
             try
             {
-                if (!File.Exists(SettingsFilePath)) return;
+                var s = AppSettings.Load();
 
-                var lines = File.ReadAllLines(SettingsFilePath);
-                var settingsDict = new System.Collections.Generic.Dictionary<string, string>();
+                if (!string.IsNullOrEmpty(s.SourceServer))   SourceServer.Text       = s.SourceServer;
+                if (!string.IsNullOrEmpty(s.SourceDatabase)) SourceDatabase.Text     = s.SourceDatabase;
+                if (!string.IsNullOrEmpty(s.SourceUser))     SourceUser.Text         = s.SourceUser;
+                SourceUseWindowsAuth.IsChecked = s.SourceUseWindowsAuth;
 
-                foreach (var line in lines)
-                {
-                    if (line.Contains('='))
-                    {
-                        var parts = line.Split(new[] { '=' }, 2);
-                        settingsDict[parts[0].Trim()] = parts.Length > 1 ? parts[1].Trim() : "";
-                    }
-                }
-
-                if (settingsDict.ContainsKey("SourceServer"))
-                    SourceServer.Text = settingsDict["SourceServer"];
-
-                if (settingsDict.ContainsKey("DestServer"))
-                    DestinationServer.Text = settingsDict["DestServer"];
-
-                if (settingsDict.ContainsKey("SourceDatabase"))
-                    SourceDatabase.Text = settingsDict["SourceDatabase"];
-
-                if (settingsDict.ContainsKey("DestDatabase"))
-                    DestinationDatabase.Text = settingsDict["DestDatabase"];
-
-                if (settingsDict.ContainsKey("SourceUser"))
-                    SourceUser.Text = settingsDict["SourceUser"];
-
-                if (settingsDict.ContainsKey("DestUser"))
-                    DestinationUser.Text = settingsDict["DestUser"];
-
-                if (settingsDict.ContainsKey("SourceUseWindowsAuth"))
-                {
-                    SourceUseWindowsAuth.IsChecked = bool.Parse(settingsDict["SourceUseWindowsAuth"]);
-                }
-
-                if (settingsDict.ContainsKey("DestUseWindowsAuth"))
-                {
-                    DestinationUseWindowsAuth.IsChecked = bool.Parse(settingsDict["DestUseWindowsAuth"]);
-                }
+                if (!string.IsNullOrEmpty(s.DestServer))     DestinationServer.Text   = s.DestServer;
+                if (!string.IsNullOrEmpty(s.DestDatabase))   DestinationDatabase.Text = s.DestDatabase;
+                if (!string.IsNullOrEmpty(s.DestUser))       DestinationUser.Text     = s.DestUser;
+                DestinationUseWindowsAuth.IsChecked = s.DestUseWindowsAuth;
 
                 Auth_CheckChanged(null!, null!);
             }
@@ -344,6 +309,28 @@ namespace MigrationTool
             {
                 Debug.WriteLine($"Error loading settings: {ex.Message}");
             }
+        }
+
+        private void BrowseAppSettingsPath_Click(object sender, RoutedEventArgs e)
+        {
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog
+            {
+                Description = "Select folder for app_settings.json",
+                SelectedPath = System.IO.Path.GetDirectoryName(AppSettings.SettingsFilePath)!,
+                ShowNewFolderButton = true
+            };
+
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                AppSettings.ChangeSettingsPath(dialog.SelectedPath);
+                AppSettingsPathBox.Text = AppSettings.SettingsFilePath;
+            }
+        }
+
+        private void ResetAppSettingsPath_Click(object sender, RoutedEventArgs e)
+        {
+            AppSettings.ResetSettingsPath();
+            AppSettingsPathBox.Text = AppSettings.SettingsFilePath;
         }
     }
 

@@ -50,6 +50,10 @@ namespace MigrationTool.Shared
         public List<ColumnMapping> Mappings { get; set; } = new();
         public DateTime CreatedDate { get; set; }
         public DateTime LastModifiedDate { get; set; }
+        /// <summary>
+        /// The directory this mapping file was saved to. Informational only.
+        /// </summary>
+        public string MappingDirectory { get; set; } = string.Empty;
 
         public string FullTableName => $"[{TableSchema}].[{TableName}]";
 

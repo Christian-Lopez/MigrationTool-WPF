@@ -47,6 +47,7 @@ namespace MigrationTool.Shared
             {
                 config.CreatedDate = DateTime.Now;
             }
+            config.MappingDirectory = MappingDirectory;
 
             var fileName = $"{config.GetMappingKey()}.json";
             var filePath = Path.Combine(MappingDirectory, fileName);
@@ -143,66 +144,31 @@ namespace MigrationTool.Shared
 
         // ── Persistence helpers ──────────────────────────────────────────────
 
-        private static readonly string SettingsFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "MigrationTool",
-            "connection_settings.ini");
-
         /// <summary>
-        /// Saves the current MappingDirectory to the shared settings file.
+        /// Saves the current MappingDirectory to app_settings.json.
         /// </summary>
         public static void SavePathPreference()
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(SettingsFilePath)!);
-
-                var dict = ReadSettingsFile();
-                dict["MappingDirectory"] = MappingDirectory;
-                WriteSettingsFile(dict);
+                AppSettings.SaveMappingDirectory(MappingDirectory);
             }
             catch { /* non-critical */ }
         }
 
         /// <summary>
-        /// Loads a previously saved MappingDirectory from the shared settings file.
+        /// Loads a previously saved MappingDirectory from app_settings.json.
         /// Falls back to the default if nothing is saved.
         /// </summary>
         public static void LoadPathPreference()
         {
             try
             {
-                var dict = ReadSettingsFile();
-                if (dict.TryGetValue("MappingDirectory", out var saved) && !string.IsNullOrWhiteSpace(saved))
-                {
-                    MappingDirectory = saved;
-                }
+                var s = AppSettings.Load();
+                if (!string.IsNullOrWhiteSpace(s.MappingDirectory))
+                    MappingDirectory = s.MappingDirectory;
             }
             catch { /* keep default */ }
-        }
-
-        private static Dictionary<string, string> ReadSettingsFile()
-        {
-            var dict = new Dictionary<string, string>();
-            if (!File.Exists(SettingsFilePath)) return dict;
-
-            foreach (var line in File.ReadAllLines(SettingsFilePath))
-            {
-                if (line.Contains('='))
-                {
-                    var parts = line.Split(new[] { '=' }, 2);
-                    dict[parts[0].Trim()] = parts.Length > 1 ? parts[1].Trim() : "";
-                }
-            }
-            return dict;
-        }
-
-        private static void WriteSettingsFile(Dictionary<string, string> dict)
-        {
-            var lines = new List<string>();
-            foreach (var kvp in dict)
-                lines.Add($"{kvp.Key}={kvp.Value}");
-            File.WriteAllLines(SettingsFilePath, lines);
         }
     }
 }
